@@ -6,45 +6,61 @@ $inputJSON = file_get_contents("php://input");
 $input = json_decode($inputJSON, true);
 $time = date("Y-m-d-H-i-s");
 echo "$time\n";
-file_put_contents(__DIR__ . "/log/" . $time . ".json", $inputJSON);
 
 if (isset($input["repository"])) {
 	$repo = $input["repository"]["clone_url"];
-	if ($repo != $config['repo']) {
+	if (isset($config[$repo])) {
+		$path = $config[$repo];
+	} else {
 		exit('Not specify repo');
 	}
+	$reponame = $input["repository"]["full_name"];
 	echo "repo: $repo\n";
+	echo "reponame: $reponame\n";
+	echo "path: $path\n";
 } else {
 	exit('Not github webhook');
 }
 
+$logdir = __DIR__ . '/log/' . $reponame . '/';
+if (!is_dir($logdir)) {
+	echo "mkdir $logdir\n";
+	if (!mkdir($logdir, 0777, true)) {
+		exit("mkdir failed\n");
+	}
+}
+
+file_put_contents($logdir . $time . ".json", $inputJSON);
+
 if (isset($input["pull_request"])) {
-	file_put_contents(__DIR__ . "/log/" . $time . "-pr.json", "");
+	file_put_contents($logdir . $time . "-pr.json", "");
 	$prnumber = $input["pull_request"]["number"];
 	$folder = "pr-" . $prnumber;
-	$log = " >> '" . __DIR__ . "/log/" . $time . "-result.txt' 2>&1 ";
+	$log = " >> '" . $logdir . $time . "-result.txt' 2>&1 ";
 
-	$command = ("cd " . $config['path'] . $log
+	$command = ("cd " . $path . $log
 		. " && rm -rf " . $folder . $log
 		. " && git clone " . $repo . " " . $folder . $log
 		. " && cd " . $folder . $log
 		. " && git pull origin pull/" . $prnumber . "/head" . $log
 		. " &");
 
-	file_put_contents(__DIR__ . "/log/" . $time . "-command.txt", $command);
+	file_put_contents($logdir . $time . "-command.txt", $command);
 	exec($command);
 }
 if (isset($input["head_commit"])) {
-	file_put_contents(__DIR__ . "/log/" . $time . "-commit.json", "");
+	file_put_contents($logdir . $time . "-commit.json", "");
 	$branch = str_replace("refs/heads/", "", $input["ref"]);
 	$folder = $branch;
-	$log = " >> '" . __DIR__ . "/log/" . $time . "-result.txt' 2>&1 ";
+	$log = " >> '" . $logdir . $time . "-result.txt' 2>&1 ";
 
-	$command = ("cd " . $config['path'] . $log
+	$command = ("cd " . $path . $log
 		. " && rm -rf " . $folder . $log
 		. " && git clone " . $repo . " -b " . $branch . " --single-branch " . $folder . $log
 		. " &");
 
-	file_put_contents(__DIR__ . "/log/" . $time . "-command.txt", $command);
+	file_put_contents($logdir . $time . "-command.txt", $command);
 	exec($command);
 }
+
+echo "Done\n";

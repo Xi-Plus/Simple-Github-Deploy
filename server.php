@@ -30,8 +30,6 @@ if (!is_dir($logdir)) {
 	}
 }
 
-file_put_contents($logdir . $time . ".json", $inputJSON);
-
 if (isset($input["pull_request"])) {
 	file_put_contents($logdir . $time . "-pr.json", "");
 	$prnumber = $input["pull_request"]["number"];
@@ -47,8 +45,7 @@ if (isset($input["pull_request"])) {
 
 	file_put_contents($logdir . $time . "-command.txt", $command);
 	exec($command);
-}
-if (isset($input["head_commit"])) {
+} else if (isset($input["head_commit"])) {
 	file_put_contents($logdir . $time . "-commit.json", "");
 	$branch = str_replace("refs/heads/", "", $input["ref"]);
 	$folder = $branch;
@@ -61,6 +58,8 @@ if (isset($input["head_commit"])) {
 
 	file_put_contents($logdir . $time . "-command.txt", $command);
 	exec($command);
+} else {
+	file_put_contents($logdir . $time . "-unknown.json", $inputJSON);
 }
 
 echo "Done\n";

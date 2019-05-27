@@ -31,21 +31,36 @@ if (!is_dir($logdir)) {
 }
 
 if (isset($input["pull_request"])) {
-	echo "pull request\n";
-	file_put_contents($logdir . $time . "-pr.json", $inputJSON);
-	$prnumber = $input["pull_request"]["number"];
-	$folder = "pr-" . $prnumber;
-	$log = " >> '" . $logdir . $time . "-result.txt' 2>&1 ";
+	if ($input["pull_request"]["state"] == 'closed') {
+		echo "pull request close\n";
+		file_put_contents($logdir . $time . "-pull-request-close.json", $inputJSON);
+		$prnumber = $input["pull_request"]["number"];
+		$folder = "pr-" . $prnumber;
+		$log = " >> '" . $logdir . $time . "-result.txt' 2>&1 ";
 
-	$command = ("cd " . $path . $log
-		. " && rm -rf " . $folder . $log
-		. " && git clone " . $repo . " " . $folder . $log
-		. " && cd " . $folder . $log
-		. " && git pull origin pull/" . $prnumber . "/head" . $log
-		. " &");
+		$command = ("cd " . $path . $log
+			. " && rm -rf " . $folder . $log
+			. " &");
 
-	file_put_contents($logdir . $time . "-command.txt", $command);
-	exec($command);
+		file_put_contents($logdir . $time . "-command.txt", $command);
+		exec($command);
+	} else {
+		echo "pull request open\n";
+		file_put_contents($logdir . $time . "-pull-request-open.json", $inputJSON);
+		$prnumber = $input["pull_request"]["number"];
+		$folder = "pr-" . $prnumber;
+		$log = " >> '" . $logdir . $time . "-result.txt' 2>&1 ";
+
+		$command = ("cd " . $path . $log
+			. " && rm -rf " . $folder . $log
+			. " && git clone " . $repo . " " . $folder . $log
+			. " && cd " . $folder . $log
+			. " && git pull origin pull/" . $prnumber . "/head" . $log
+			. " &");
+
+		file_put_contents($logdir . $time . "-command.txt", $command);
+		exec($command);
+	}
 } else if (isset($input["head_commit"])) {
 	echo "commit\n";
 	file_put_contents($logdir . $time . "-commit.json", $inputJSON);

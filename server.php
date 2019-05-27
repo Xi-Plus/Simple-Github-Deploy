@@ -60,6 +60,19 @@ if (isset($input["pull_request"])) {
 
 	file_put_contents($logdir . $time . "-command.txt", $command);
 	exec($command);
+} else if (isset($input["deleted"]) && $input["deleted"] && isset($input["ref"])) {
+	echo "delete branch\n";
+	file_put_contents($logdir . $time . "-delete-branch.json", $inputJSON);
+	$branch = str_replace("refs/heads/", "", $input["ref"]);
+	$folder = $branch;
+	$log = " >> '" . $logdir . $time . "-result.txt' 2>&1 ";
+
+	$command = ("cd " . $path . $log
+		. " && rm -rf " . $folder . $log
+		. " &");
+
+	file_put_contents($logdir . $time . "-command.txt", $command);
+	exec($command);
 } else {
 	echo "nothing to do\n";
 	file_put_contents($logdir . $time . "-unknown.json", $inputJSON);
